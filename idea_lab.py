@@ -158,12 +158,12 @@ def cmd_pivot(idea_id: str):
     dom = get_domain(idea.domain)
     header(f"Pivot — {idea.name}")
     print(f"  Domain: {cyn(dom['label'])}")
-    print(dim("  Re-score a single dimension to reflect improvement or new evidence.\n"))
+    print(dim("  Recursive Weighted Pivot: NewScore = (1-w)*OldScore + w*InputScore\n"))
 
     dims = list(dom["dimensions"].items())
     for i, (key, dim_def) in enumerate(dims, 1):
         current = idea.scores.get(key, 0)
-        print(f"    {cyn(str(i))}) {dim_def['name']:28} (current: {ylw(str(current))})")
+        print(f"    {cyn(str(i))}) {dim_def['name']:28} (current: {ylw(f'{current:.2f}')})")
 
     while True:
         raw = ask("\n  Pick a dimension to re-score (1–6)", "1")
@@ -175,14 +175,24 @@ def cmd_pivot(idea_id: str):
         except ValueError: pass
         print(red("  Enter a number 1–6."))
 
-    new_score = ask_score(dim_def)
+    input_score = ask_score(dim_def)
+
+    while True:
+        w_raw = ask("  Weight of Evidence (0.0 to 1.0)", "1.0")
+        try:
+            weight = float(w_raw)
+            if 0.0 <= weight <= 1.0: break
+        except ValueError: pass
+        print(red("  Enter a float between 0.0 and 1.0."))
+
+    old_score = idea.scores.get(key, 0)
+    new_score = (1 - weight) * old_score + weight * input_score
+
     idea.scores[key] = new_score
     idea.compute_score()
     save_one(idea)
 
-    print(grn(f"\n  ✔ Updated. New total score: {b(str(idea.total_score))}/12\n"))
-
-
+    print(grn(f"\n  ✔ Updated. New total score: {b(f'{idea.total_score:.2f}')}/12\n"))
 def cmd_research(idea_id: str):
     idea = find_idea(idea_id)
     if not idea:
@@ -257,6 +267,15 @@ def cmd_report():
     with_value = [i for i in all_ideas if i.idea_value() > 0]
 
     header("PORTFOLIO REPORT")
+
+    # Knowledge status breakdown
+    knowledge_counts = Counter(i.knowledge_status for i in all_ideas)
+    section("Knowledge Status")
+    for status in ["EXPERT", "KNOWLEDGEABLE", "EXPLORING", "UNRESEARCHED"]:
+        count = knowledge_counts.get(status, 0)
+        bar_w = int((count / max(len(all_ideas), 1)) * 30)
+        bar   = "█" * bar_w + "░" * (30 - bar_w)
+        print(f"    {status.ljust(15)} {grn(bar)} {b(str(count))}")
 
     section("Pipeline Stats")
     print(f"    Total ideas         : {b(str(len(all_ideas)))}")
@@ -360,7 +379,6 @@ if __name__ == "__main__":
         "list":    cmd_list,
         "report":  cmd_report,
         "domains": cmd_domains,
-        "pivot":   cmd_pivot,
         "research": cmd_research,
     }
 

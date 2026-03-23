@@ -47,17 +47,19 @@ def section(title: str):
     hr("─", 50)
 
 
-def score_bar(score: int, max_score: int = 12) -> str:
+def score_bar(score: float, max_score: float = 12) -> str:
     filled = int((score / max_score) * BAR_WIDTH)
     bar    = "█" * filled + "░" * (BAR_WIDTH - filled)
+    s_disp = round(score, 1)
     pct    = int((score / max_score) * 100)
     color  = GREEN if pct >= 70 else (YELLOW if pct >= 45 else RED)
-    return f"{color}{bar}{RESET} {b(str(score))}/{max_score}  ({pct}%)"
+    return f"{color}{bar}{RESET} {b(str(s_disp))}/{int(max_score)}  ({pct}%)"
 
 
-def dim_score_dot(score: int, max_score: int = 2) -> str:
-    bar   = "●" * score + "○" * (max_score - score)
-    color = GREEN if score == 2 else (YELLOW if score == 1 else RED)
+def dim_score_dot(score: float, max_score: int = 2) -> str:
+    s_int = int(round(score))
+    bar   = "●" * s_int + "○" * (max_score - s_int)
+    color = GREEN if score >= 1.5 else (YELLOW if score >= 0.5 else RED)
     return f"{color}{bar}{RESET}"
 
 
@@ -77,12 +79,15 @@ def print_idea_summary(idea):
         score = idea.scores.get(key, 0)
         dots  = dim_score_dot(score)
         label = dim_def["name"].ljust(28)
-        note  = dim(dim_def["scores"][score][:58])
+        # Use integer for description lookup
+        s_idx = int(round(score))
+        note  = dim(dim_def["scores"][s_idx][:58])
         print(f"    {label} {dots}  {note}")
 
     print()
     print(f"  Total Score : {score_bar(idea.total_score)}")
     print(f"  Verdict     : {vc}{b(idea.verdict)}{RESET}  —  {idea.verdict_action}")
+    print(f"  Knowledge   : {b(idea.knowledge_status)}")
 
     iv = idea.idea_value()
     if iv > 0:
@@ -115,10 +120,11 @@ def print_idea_card(idea, index: int):
 
     from domains import get_domain
     dom_label = get_domain(idea.domain)["label"][:14].ljust(14)
+    s_disp = f"{idea.total_score:.1f}"
 
     print(f"  {dim(str(index).rjust(2))}  {b(idea.name[:28].ljust(28))} "
           f"{cyn(dom_label)}  "
           f"{vc}{idea.verdict.ljust(12)}{RESET}"
-          f"Score:{b(str(idea.total_score).rjust(3))}  "
+          f"Score:{b(s_disp.rjust(4))}  "
           f"Test:{tst} Exe:{exe}  Val:{b(str(iv).rjust(4))}"
           f"{killed}")

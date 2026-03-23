@@ -11,10 +11,10 @@ from typing import Optional
 DB_PATH = os.path.join(os.path.dirname(__file__), "ideas.json")
 
 VERDICTS = {
-    (10, 12): ("STRONG",      "Design your minimum test immediately."),
-    (8,  9):  ("CONDITIONAL", "Identify the weak dimension. Resolve it before proceeding."),
-    (5,  7):  ("RISKY",       "Don't invest resources. Run a cheap test on the weakest dimension first."),
-    (0,  4):  ("STOP",        "Too many unresolved assumptions. Redesign or abandon."),
+    (10, 12.1): ("STRONG",      "Design your minimum test immediately."),
+    (8,  10):   ("CONDITIONAL", "Identify the weak dimension. Resolve it before proceeding."),
+    (5,  8):    ("RISKY",       "Don't invest resources. Run a cheap test on the weakest dimension first."),
+    (0,  5):    ("STOP",        "Too many unresolved assumptions. Redesign or abandon."),
 }
 
 
@@ -37,7 +37,7 @@ class Idea:
     description: str
     domain: str                        # key into DOMAINS registry
     scores: dict = field(default_factory=dict)
-    total_score: int = 0
+    total_score: float = 0.0
     verdict: str = ""
     verdict_action: str = ""
     test: Optional[TestDesign] = None
@@ -49,14 +49,36 @@ class Idea:
     killed: bool = False
     kill_reason: str = ""
 
+    @property
+    def knowledge_status(self) -> str:
+        """
+        Calculates status based on deep research, tests, and execution.
+        """
+        if self.executed:
+            return "EXPERT"
+        if self.test and self.test.result == "pass":
+            return "KNOWLEDGEABLE"
+
+        # Count words in research notes as a proxy for depth
+        research_depth = len(self.research_notes.split()) if self.research_notes else 0
+        if research_depth > 100:
+            return "KNOWLEDGEABLE"
+        if research_depth > 0:
+            return "EXPLORING"
+
+        return "UNRESEARCHED"
+
     def compute_score(self):
         s = sum(self.scores.values())
         self.total_score = s
         for (lo, hi), (verdict, action) in VERDICTS.items():
-            if lo <= s <= hi:
+            if lo <= s < hi:
                 self.verdict = verdict
                 self.verdict_action = action
                 break
+        # Edge case for max score
+        if s >= 12:
+            self.verdict, self.verdict_action = VERDICTS[(10, 12.1)]
 
     def idea_value(self) -> float:
         """
