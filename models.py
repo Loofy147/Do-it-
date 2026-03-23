@@ -43,6 +43,7 @@ class Idea:
     test: Optional[TestDesign] = None
     executed: bool = False
     execution_notes: str = ""
+    research_notes: str = ""
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     killed: bool = False
@@ -95,8 +96,13 @@ class Idea:
 def load_all() -> dict:
     if not os.path.exists(DB_PATH):
         return {}
-    with open(DB_PATH) as f:
-        raw = json.load(f)
+    try:
+        with open(DB_PATH) as f:
+            raw = json.load(f)
+    except json.JSONDecodeError:
+        import sys
+        print(f"Warning: {DB_PATH} is corrupt. Returning empty dataset.", file=sys.stderr)
+        return {}
     return {k: Idea.from_dict(v) for k, v in raw.items()}
 
 

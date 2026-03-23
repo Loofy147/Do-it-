@@ -62,7 +62,7 @@ def wipe():
 header("SECTION 1 — Domain System Integrity")
 
 test("All 12 domains are registered", lambda:
-    len(DOMAINS) == 12)
+    len(DOMAINS) == 13)
 
 test("Every domain has exactly 6 dimensions", lambda:
     all(len(v["dimensions"]) == 6 for v in DOMAINS.values())
@@ -91,11 +91,11 @@ test("get_domain with valid key returns correct domain", lambda:
 test("get_domain with INVALID key falls back to 'business'", lambda:
     get_domain("nonexistent_domain_xyz")["label"] == "Business / Startup")
 
-test("list_domains returns all 12", lambda:
-    len(list_domains()) == 12)
+test("list_domains returns all 13", lambda:
+    len(list_domains()) == 13)
 
 test("No two domains share the same label", lambda:
-    len(set(v["label"] for v in DOMAINS.values())) == 12)
+    len(set(v["label"] for v in DOMAINS.values())) == 13)
 
 test("No dimension name is blank or missing", lambda:
     all(
@@ -260,14 +260,11 @@ test("Empty database returns empty dict", test_empty_db)
 def test_corrupt_json():
     with open(DB_PATH, "w") as f:
         f.write("{corrupt json ][")
-    try:
-        loaded = load_all()
-        return "WARN"  # Loaded without crashing but returned something
-    except Exception:
-        # Crashing on corrupt JSON is expected — mark as WARN (known limitation)
-        return "WARN"
+    # Should now return empty dict and print warning to stderr
+    loaded = load_all()
+    return loaded == {}
 
-test("Corrupt JSON file — expected behavior", test_corrupt_json)
+test("Corrupt JSON file — returns empty dict", test_corrupt_json)
 
 # Restore clean state
 wipe()

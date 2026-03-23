@@ -16,6 +16,72 @@ what a valid TEST looks like, and what EXECUTED means.
 #   kill_dim    — which dimension key kills the idea if scored 0
 
 DOMAINS = {
+    # ── 13. DEEP RESEARCH ────────────────────────────────────────────────
+    "deep_research": {
+        "label":       "Deep Research",
+        "description": "A high-complexity, multi-stage investigation into a recurring problem or novel field.",
+        "idea_noun":   "Research Initiative",
+        "test_guide":  "Phase 1: literature review and problem decomposition. Phase 2: pilot experiment or case study. "
+                       "Verify findings with peer experts or through cross-methodology triangulation.",
+        "execute_guide": "Publish a comprehensive research report with raw data, methodology, and peer-reviewed conclusions.",
+        "kill_dim":    "problem_novelty",
+        "dimensions": {
+            "problem_novelty": {
+                "name":     "PROBLEM NOVELTY",
+                "question": "Is the problem either undocumented or recurring despite prior attempts?",
+                "scores": {
+                    0: "Problem is well-understood and solved. Research adds no new value.",
+                    1: "Problem is known but prior solutions are incomplete or failing.",
+                    2: "Novel problem or documented recurring failure with no known root cause.",
+                },
+            },
+            "methodological_rigor": {
+                "name":     "METHODOLOGICAL RIGOR",
+                "question": "Is the research plan rigorous enough to produce verifiable, non-obvious insights?",
+                "scores": {
+                    0: "Surface-level inquiry only. No distinct methodology.",
+                    1: "Solid plan but lacks multi-method triangulation or external validation.",
+                    2: "Rigorous, multi-stage methodology with clear bias controls and peer check-ins.",
+                },
+            },
+            "falsifiability": {
+                "name":     "FALSIFIABILITY",
+                "question": "Can the central hypothesis or finding be proven wrong by specific data?",
+                "scores": {
+                    0: "Claims are descriptive only and cannot be disproven.",
+                    1: "Partially falsifiable. Some findings could challenge the thesis.",
+                    2: "Strictly falsifiable. Specific evidence would conclusively invalidate the results.",
+                },
+            },
+            "resource_reachability": {
+                "name":     "ACCESS & INSTRUMENTATION",
+                "question": "Do you have access to the data, experts, and instruments needed for deep inquiry?",
+                "scores": {
+                    0: "Requires data or access you cannot obtain.",
+                    1: "Access is possible but requires significant negotiation or long-tail collection.",
+                    2: "Full access to data, subjects, and tools confirmed.",
+                },
+            },
+            "impact_significance": {
+                "name":     "SIGNIFICANCE",
+                "question": "Does resolving this unlock significant downstream value or clarify a major field?",
+                "scores": {
+                    0: "Incremental insight with minimal impact on the field.",
+                    1: "Moderate impact. Clarifies a specific sub-problem.",
+                    2: "High impact. Resolves a recurring blocker or establishes a new foundation.",
+                },
+            },
+            "investigator_fit": {
+                "name":     "INVESTIGATOR FIT",
+                "question": "Do you have the patience, rigor, and background to lead this recurring inquiry?",
+                "scores": {
+                    0: "Outside your domain or temperament. Likely to abandon or oversimplify.",
+                    1: "Domain-aligned but requires developing deeper methodological skills.",
+                    2: "Perfect fit. Proven track record in complex, long-tail investigations.",
+                },
+            },
+        },
+    },
 
     # ── 1. QUESTION / ANSWER ────────────────────────────────────────────────
     "qa": {
