@@ -7,6 +7,8 @@ USAGE:
     python idea_lab.py new              # Benchmark a new idea (full flow)
     python idea_lab.py list             # List all ideas
     python idea_lab.py view   <id>      # Full detail on one idea
+    python idea_lab.py pivot  <id>      # Re-score a dimension
+    python idea_lab.py research <id>    # Add deep research notes
     python idea_lab.py result <id>      # Record test result
     python idea_lab.py execute <id>     # Mark as executed
     python idea_lab.py report           # Portfolio report + funnel
@@ -15,11 +17,12 @@ USAGE:
 """
 
 import sys
+from collections import Counter
 from models import load_all, save_one
 from display import (header, section, hr, b, dim, red, grn, ylw, cyn,
                      print_idea_summary, print_idea_card, RESET)
 from benchmark import (phase_capture, phase_benchmark, phase_verdict,
-                       phase_test_design, phase_record_result, phase_execute, ask)
+                       phase_test_design, phase_record_result, phase_execute, ask, ask_score)
 from domains import list_domains, get_domain
 
 
@@ -116,6 +119,10 @@ def cmd_view(idea_id: str):
         if t.result_notes:
             print(f"    Notes       : {dim(t.result_notes)}")
 
+    if idea.research_notes:
+        section("Research Notes")
+        print(f"    {idea.research_notes}")
+
     if idea.execution_notes:
         section("Execution Notes")
         print(f"    {idea.execution_notes}")
@@ -140,6 +147,73 @@ def cmd_view(idea_id: str):
         color = grn if iv > 0 else red
         print(f"    {b('Idea Value')}  =  {a} × {bv} × {tp} × {ex}  =  {color(b(str(int(iv))))}")
     print()
+
+
+def cmd_pivot(idea_id: str):
+    idea = find_idea(idea_id)
+    if not idea:
+        print(red(f"\n  Idea '{idea_id}' not found.\n"))
+        return
+
+    dom = get_domain(idea.domain)
+    header(f"Pivot — {idea.name}")
+    print(f"  Domain: {cyn(dom['label'])}")
+    print(dim("  Recursive Weighted Pivot: NewScore = (1-w)*OldScore + w*InputScore\n"))
+
+    dims = list(dom["dimensions"].items())
+    for i, (key, dim_def) in enumerate(dims, 1):
+        current = idea.scores.get(key, 0)
+        print(f"    {cyn(str(i))}) {dim_def['name']:28} (current: {ylw(f'{current:.2f}')})")
+
+    while True:
+        raw = ask("\n  Pick a dimension to re-score (1–6)", "1")
+        try:
+            idx = int(raw) - 1
+            if 0 <= idx < 6:
+                key, dim_def = dims[idx]
+                break
+        except ValueError: pass
+        print(red("  Enter a number 1–6."))
+
+    input_score = ask_score(dim_def)
+
+    while True:
+        w_raw = ask("  Weight of Evidence (0.0 to 1.0)", "1.0")
+        try:
+            weight = float(w_raw)
+            if 0.0 <= weight <= 1.0: break
+        except ValueError: pass
+        print(red("  Enter a float between 0.0 and 1.0."))
+
+    old_score = idea.scores.get(key, 0)
+    new_score = (1 - weight) * old_score + weight * input_score
+
+    idea.scores[key] = new_score
+    idea.compute_score()
+    save_one(idea)
+
+    print(grn(f"\n  ✔ Updated. New total score: {b(f'{idea.total_score:.2f}')}/12\n"))
+def cmd_research(idea_id: str):
+    idea = find_idea(idea_id)
+    if not idea:
+        print(red(f"\n  Idea '{idea_id}' not found.\n"))
+        return
+
+    header(f"Record Research — {idea.name}")
+    print(dim("  Add deep research findings, citations, or domain evidence.\n"))
+
+    if idea.research_notes:
+        print(f"  {b('Current Research')}:")
+        print(f"    {idea.research_notes}\n")
+
+    notes = ask("New research notes (will append)")
+    if idea.research_notes:
+        idea.research_notes += "\n" + notes
+    else:
+        idea.research_notes = notes
+
+    save_one(idea)
+    print(grn("\n  ✔ Research recorded.\n"))
 
 
 def cmd_result(idea_id: str):
@@ -194,6 +268,15 @@ def cmd_report():
 
     header("PORTFOLIO REPORT")
 
+    # Knowledge status breakdown
+    knowledge_counts = Counter(i.knowledge_status for i in all_ideas)
+    section("Knowledge Status")
+    for status in ["EXPERT", "KNOWLEDGEABLE", "EXPLORING", "UNRESEARCHED"]:
+        count = knowledge_counts.get(status, 0)
+        bar_w = int((count / max(len(all_ideas), 1)) * 30)
+        bar   = "█" * bar_w + "░" * (30 - bar_w)
+        print(f"    {status.ljust(15)} {grn(bar)} {b(str(count))}")
+
     section("Pipeline Stats")
     print(f"    Total ideas         : {b(str(len(all_ideas)))}")
     print(f"    Active              : {grn(str(len(active)))}")
@@ -209,7 +292,6 @@ def cmd_report():
     print(f"    Ideas with value >0 : {grn(str(len(with_value)))}")
 
     # Breakdown by domain
-    from collections import Counter
     domain_counts = Counter(i.domain for i in all_ideas)
     if len(domain_counts) > 1:
         section("By Domain")
@@ -237,6 +319,21 @@ def cmd_report():
             color = grn if iv > 0 else red
             print(f"    {b(idea.name[:22].ljust(22))}  {a}×{bv}×{tp}×{ex} = {color(b(str(int(iv))))}")
 
+    # Weakness aggregation
+    weaknesses = Counter()
+    for idea in all_ideas:
+        dom = get_domain(idea.domain)
+        for key, score in idea.scores.items():
+            if score < 2:
+                dim_name = dom["dimensions"].get(key, {}).get("name", key)
+                weaknesses[dim_name] += 1
+
+    if weaknesses:
+        section("Common Weaknesses")
+        print(dim("    Dimensions scoring < 2 across the portfolio:"))
+        for dim_name, count in weaknesses.most_common(5):
+            print(f"      {red('→')} {dim_name:28} {b(str(count))} ideas")
+
     section("Conversion Funnel")
     n = len(all_ideas)
     stages = [
@@ -261,11 +358,13 @@ def cmd_menu():
     print(f"  {cyn('new')}              Full benchmark (any domain)")
     print(f"  {cyn('list')}             All ideas")
     print(f"  {cyn('view')}    <id>     Full detail")
+    print(f"  {cyn('pivot')}    <id>     Re-score a dimension")
+    print(f"  {cyn('research')} <id>     Add deep research notes")
     print(f"  {cyn('result')}  <id>     Record test result")
     print(f"  {cyn('execute')} <id>     Mark as executed")
     print(f"  {cyn('kill')}    <id>     Kill an idea")
     print(f"  {cyn('report')}           Portfolio report")
-    print(f"  {cyn('domains')}          List all 12 domains")
+    print(f"  {cyn('domains')}          List all 13 domains")
     print()
 
 
@@ -280,11 +379,14 @@ if __name__ == "__main__":
         "list":    cmd_list,
         "report":  cmd_report,
         "domains": cmd_domains,
+        "research": cmd_research,
     }
 
     if cmd in dispatch:
         dispatch[cmd]()
     elif cmd == "view"    and len(args) > 1: cmd_view(args[1])
+    elif cmd == "pivot"   and len(args) > 1: cmd_pivot(args[1])
+    elif cmd == "research" and len(args) > 1: cmd_research(args[1])
     elif cmd == "result"  and len(args) > 1: cmd_result(args[1])
     elif cmd == "execute" and len(args) > 1: cmd_execute(args[1])
     elif cmd == "kill"    and len(args) > 1: cmd_kill(args[1])
