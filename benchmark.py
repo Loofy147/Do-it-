@@ -69,12 +69,18 @@ def phase_capture() -> Idea:
     if not name:
         name = f"Unnamed {idea_noun}"
     description = ask("Describe it in one sentence")
+    cost_raw = ask("Estimated cost / resource weight (numeric)", "1.0")
+    try:
+        estimated_cost = float(cost_raw)
+    except ValueError:
+        estimated_cost = 1.0
 
     return Idea(
         id=str(uuid.uuid4())[:8],
         name=name,
         description=description,
         domain=domain_key,
+        estimated_cost=estimated_cost,
     )
 
 

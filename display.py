@@ -88,6 +88,10 @@ def print_idea_summary(idea):
     print(f"  Total Score : {score_bar(idea.total_score)}")
     print(f"  Verdict     : {vc}{b(idea.verdict)}{RESET}  —  {idea.verdict_action}")
     print(f"  Knowledge   : {b(idea.knowledge_status)}")
+    print(f"  Est. Cost   : {b(str(idea.estimated_cost))}")
+    roi_val = idea.roi()
+    roi_color = grn if roi_val > 10 else (ylw if roi_val > 0 else red)
+    print(f"  ROI         : {roi_color(b(str(round(roi_val, 1))))}")
 
     iv = idea.idea_value()
     if iv > 0:
@@ -126,5 +130,5 @@ def print_idea_card(idea, index: int):
           f"{cyn(dom_label)}  "
           f"{vc}{idea.verdict.ljust(12)}{RESET}"
           f"Score:{b(s_disp.rjust(4))}  "
-          f"Test:{tst} Exe:{exe}  Val:{b(str(iv).rjust(4))}"
+          f"Test:{tst} Exe:{exe}  Val:{b(str(iv).rjust(4))} ROI:{b(str(round(idea.roi(), 1)).rjust(4))}"
           f"{killed}")

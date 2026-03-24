@@ -1,0 +1,16 @@
+# Constituent Ideas 7-11 for Idea Lab Self-Evaluation
+
+7. Recursive Weighted Pivots (Methodology)
+   - NewScore = (1-w)*OldScore + w*InputScore.
+
+8. Automated Knowledge Status (Methodology)
+   - UNRESEARCHED -> EXPLORING -> KNOWLEDGEABLE -> EXPERT.
+
+9. JSON Robustness & Error Recovery (Technology)
+   - Graceful handling of corrupted or malformed data.
+
+10. Multi-Domain Stress Suite (Technology)
+    - 69-test suite for system integrity.
+
+11. Deep Research Domain (Deep Research)
+    - Specialized dimensions for high-complexity investigation.

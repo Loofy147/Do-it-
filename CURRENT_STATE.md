@@ -7,14 +7,15 @@
 
 ## 🧠 Self-Evaluation Results
 The system recently evaluated its own core constituent ideas.
-- **Constituent Ideas**: 6
-- **Value Generated**: All 6 have non-zero Idea Value.
-- **Highest Scorer**: Domain-Adaptive Dimension Profiles (Value: 48).
+- **Constituent Ideas**: 11
+- **Value Generated**: All 11 have non-zero Idea Value.
+- **Highest Scorer**: Multiple ideas (Value: 48), including Recursive Weighted Pivots and Deep Research Domain.
 
 ### Identified Systemic Weaknesses
 The "Common Weaknesses" aggregation flagged the following recurring challenges:
-1. **Counterargument Resistance**: Frequently scores 1/2. Reflects the philosophical complexity of defining value across diverse domains.
-2. **Improvement Over Existing**: Systemic bias towards novelty over incrementalism.
+1. **Counterargument Resistance**: Frequently scores 1/2 in foundational philosophy.
+2. **Improvement Over Existing**: Reflects the challenge of competing with established specialized tools.
+3. **Deep Research Complexity**: The most complex domain to apply correctly.
 
 ## 🚀 Key Features Live
 - [x] **13 Specialized Domains** (including Deep Research).
@@ -22,6 +23,8 @@ The "Common Weaknesses" aggregation flagged the following recurring challenges:
 - [x] **Recursive Weighted Pivots** for evidence-based refinement.
 - [x] **Automated Knowledgeable Status** progression.
 - [x] **Graceful Error Recovery** for corrupted datasets.
+- [x] **Comprehensive Stress Suite** (69 tests).
+- [x] **Portfolio Optimization**: ROI-based ranking (Value/Cost ratios).
 
 ---
-*Last Updated: $(date +%Y-%m-%d)*
+*Last Updated: 2026-03-24*

@@ -5,6 +5,7 @@
 - [x] Recursive weighted pivot logic.
 - [x] Automated Knowledgeable Status tracking.
 - [x] Robust JSON error handling and stress testing.
+- [x] **Portfolio Optimization**: ROI-based resource allocation (IdeaValue/Cost ratios).
 
 ## Phase 2: Enhanced Interactivity (Short-term)
 - [ ] **Multi-stage Tests**: Support for testing multiple assumptions per idea.
@@ -18,5 +19,4 @@
 
 ## Phase 4: Scaling & Collaboration (Long-term)
 - [ ] **Multi-user Support**: Role-based access for peer-reviewing ideas.
-- [ ] **Portfolio Optimization**: Algorithmic resource allocation based on IdeaValue/Cost ratios.
 - [ ] **Mobile Interface**: Lightweight client for capturing ideas on the go.
