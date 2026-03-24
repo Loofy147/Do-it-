@@ -1,0 +1,189 @@
+
+# ── IDEA 7: Recursive Weighted Pivots ────────────────────────────────────────
+# Domain: Methodology
+# Recursive Weighted Pivot logic: NewScore = (1-w)*OldScore + w*InputScore
+
+i7 = Idea(
+    id=mk(),
+    name="Recursive Weighted Pivots",
+    description="Recursive Weighted Pivot logic: NewScore = (1-w)*OldScore + w*InputScore. "
+                "Allows granular confidence building as research deepens, preventing "
+                "knee-jerk score changes from single pieces of evidence.",
+    domain="methodology",
+    scores={
+        "problem_reality":        2,
+        "process_specificity":    2,
+        "falsifiability":         2,
+        "execution_reachability": 2,
+        "competition_resistance": 2,
+        "capability_fit":         2,
+    },
+)
+i7.compute_score()
+i7.test = TestDesign(
+    assumption="The weighted average formula correctly accumulates evidence over time "
+               "and handles boundary weights (0.0 and 1.0) correctly.",
+    test_method="Manual trace of 5 consecutive pivots with varying weights. "
+                "Verify final score matches expected algebraic result.",
+    success_criteria="Algebraic match across all 5 steps. w=1.0 completely overwrites. "
+                     "w=0.0 preserves old score.",
+    failure_criteria="Any deviation from (1-w)*old + w*new.",
+    deadline="2026-03-24",
+    result="pass",
+    result_date="2026-03-24",
+    result_notes="Verified manually and via stress_test.py. Formula is robust.",
+)
+i7.executed = True
+i7.execution_notes = "Implemented in idea_lab.py:cmd_pivot(). Fully operational."
+ideas.append(i7)
+
+
+# ── IDEA 8: Automated Knowledge Status ────────────────────────────────────────
+# Domain: Methodology
+# Automated progression through 4 stages based on research depth, tests, and execution.
+
+i8 = Idea(
+    id=mk(),
+    name="Automated Knowledge Status Tracking",
+    description="Automated progression through 4 stages (UNRESEARCHED, EXPLORING, "
+                "KNOWLEDGEABLE, EXPERT) based on objective metrics: research word count, "
+                "test results, and execution status.",
+    domain="methodology",
+    scores={
+        "problem_reality":        2,
+        "process_specificity":    2,
+        "falsifiability":         2,
+        "execution_reachability": 2,
+        "competition_resistance": 2,
+        "capability_fit":         2,
+    },
+)
+i8.compute_score()
+i8.test = TestDesign(
+    assumption="Knowledge status correctly reflects the objective state of the idea "
+               "without manual overrides.",
+    test_method="Create 4 ideas in each state. Verify `knowledge_status` property "
+                "returns correct enum value for each.",
+    success_criteria="100% accuracy in status reporting across all 4 stages.",
+    failure_criteria="Any idea showing incorrect status (e.g. EXPERT when not executed).",
+    deadline="2026-03-24",
+    result="pass",
+    result_date="2026-03-24",
+    result_notes="Property logic in models.py verified. Status updates are deterministic.",
+)
+i8.executed = True
+i8.execution_notes = "Implemented as a property in models.py:Idea.knowledge_status."
+ideas.append(i8)
+
+
+# ── IDEA 9: JSON Robustness & Error Recovery ──────────────────────────────────
+# Domain: Technology/Engineering
+# Graceful handling of corrupted or malformed JSON data.
+
+i9 = Idea(
+    id=mk(),
+    name="JSON Robustness & Error Recovery",
+    description="Graceful handling of corrupted or malformed JSON data by returning "
+                "an empty dataset and warning instead of crashing. Protects the "
+                "user from losing access to the tool due to a single bad write.",
+    domain="technology",
+    scores={
+        "technical_requirement":  2,
+        "solution_specificity":   2,
+        "testability":            2,
+        "execution_reachability": 2,
+        "technical_advantage":    2,
+        "engineering_competency": 2,
+    },
+)
+i9.compute_score()
+i9.test = TestDesign(
+    assumption="The system will not crash if ideas.json is truncated or contains garbage.",
+    test_method="stress_test.py Section 3: write random text to ideas.json, then call load_all().",
+    success_criteria="No crash. Warning printed to stderr. Returns empty dict.",
+    failure_criteria="System crash or unhandled exception.",
+    deadline="2026-03-24",
+    result="pass",
+    result_date="2026-03-24",
+    result_notes="Stress test Section 3 passed. Robustness confirmed.",
+)
+i9.executed = True
+i9.execution_notes = "Implemented in models.py:load_all() with try/except block."
+ideas.append(i9)
+
+
+# ── IDEA 10: Multi-Domain Stress Suite ────────────────────────────────────────
+# Domain: Technology/Engineering
+# A comprehensive 69-test suite.
+
+i10 = Idea(
+    id=mk(),
+    name="Multi-Domain Stress Suite (69 tests)",
+    description="A comprehensive 69-test suite covering integrity, formula boundaries, "
+                "kill conditions, and performance across 13 domains. Ensures system "
+                "integrity after every modification.",
+    domain="technology",
+    scores={
+        "technical_requirement":  2,
+        "solution_specificity":   2,
+        "testability":            2,
+        "execution_reachability": 2,
+        "technical_advantage":    2,
+        "engineering_competency": 2,
+    },
+)
+i10.compute_score()
+i10.test = TestDesign(
+    assumption="The stress test suite catches regressions across all 12+ domains "
+               "and formula boundary conditions.",
+    test_method="Run `python3 \"stress_test (1).py\"`. Verify all sections pass.",
+    success_criteria="69/69 tests passed.",
+    failure_criteria="Any failing test in the suite.",
+    deadline="2026-03-24",
+    result="pass",
+    result_date="2026-03-24",
+    result_notes="All tests pass. Suite covers all major system components.",
+)
+i10.executed = True
+i10.execution_notes = "Implemented in 'stress_test (1).py'. Integrated into workflow."
+ideas.append(i10)
+
+
+# ── IDEA 11: Deep Research Domain ─────────────────────────────────────────────
+# Domain: Deep Research
+# A specialized domain for high-complexity investigation.
+
+i11 = Idea(
+    id=mk(),
+    name="Deep Research Domain",
+    description="A specialized domain for high-complexity, multi-stage investigation "
+                "into recurring problems or novel fields. Features tailored dimensions "
+                "for methodological rigor and investigator fit.",
+    domain="deep_research",
+    scores={
+        "problem_novelty":       2,
+        "methodological_rigor":  2,
+        "falsifiability":        2,
+        "resource_reachability": 2,
+        "impact_significance":   2,
+        "investigator_fit":      2,
+    },
+)
+i11.compute_score()
+i11.test = TestDesign(
+    assumption="The Deep Research dimensions correctly capture the complexity "
+               "of long-term inquiry compared to the standard Project or Science domains.",
+    test_method="Manual review of domain questions. Run a test research initiative "
+                "through the benchmark.",
+    success_criteria="Dimensions are distinct and provide meaningful differentiation "
+                     "for high-complexity tasks.",
+    failure_criteria="Dimensions feel redundant with Science or Project domains.",
+    deadline="2026-03-24",
+    result="pass",
+    result_date="2026-03-24",
+    result_notes="Verified by applying to the system's own development history. "
+                 "Provides much better resolution for research-heavy tasks.",
+)
+i11.executed = True
+i11.execution_notes = "Implemented in domains.py:deep_research. Fully active."
+ideas.append(i11)
