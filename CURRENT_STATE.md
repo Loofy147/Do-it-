@@ -24,6 +24,7 @@ The "Common Weaknesses" aggregation flagged the following recurring challenges:
 - [x] **Automated Knowledgeable Status** progression.
 - [x] **Graceful Error Recovery** for corrupted datasets.
 - [x] **Comprehensive Stress Suite** (69 tests).
+- [x] **Portfolio Optimization**: ROI-based ranking (Value/Cost ratios).
 
 ---
 *Last Updated: 2026-03-24*

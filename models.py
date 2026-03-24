@@ -43,6 +43,7 @@ class Idea:
     test: Optional[TestDesign] = None
     executed: bool = False
     execution_notes: str = ""
+    estimated_cost: float = 1.0
     research_notes: str = ""
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -98,6 +99,11 @@ class Idea:
         test_passed = 1 if (self.test and self.test.result == "pass") else 0
         exe = 1 if self.executed else 0
         return group_a * group_b * test_passed * exe
+
+    def roi(self) -> float:
+        if self.estimated_cost <= 0:
+            return 0.0
+        return self.idea_value() / self.estimated_cost
 
     def to_dict(self):
         d = asdict(self)

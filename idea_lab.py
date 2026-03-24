@@ -335,6 +335,14 @@ def cmd_report():
         for dim_name, count in weaknesses.most_common(5):
             print(f"      {red('→')} {dim_name:28} {b(str(count))} ideas")
 
+    section("Portfolio Optimization (ROI Ranking)")
+    roi_ranked = sorted(all_ideas, key=lambda x: x.roi(), reverse=True)
+    for idea in roi_ranked[:10]:
+        iv = idea.idea_value()
+        roi = idea.roi()
+        if iv > 0:
+            print(f"      {grn('→')} {b(idea.name[:28].ljust(28))}  Val:{b(str(int(iv)).rjust(4))}  Cost:{b(str(idea.estimated_cost).rjust(4))}  ROI:{grn(b(str(round(roi, 1)).rjust(5)))}")
+
     section("Conversion Funnel")
     n = len(all_ideas)
     stages = [
