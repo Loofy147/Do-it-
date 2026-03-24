@@ -17,6 +17,7 @@ USAGE:
 """
 
 import sys
+import os, subprocess
 from collections import Counter
 from models import load_all, save_one
 from display import (header, section, hr, b, dim, red, grn, ylw, cyn,
@@ -352,6 +353,19 @@ def cmd_report():
     print()
 
 
+def cmd_assessment():
+    path = os.path.join(os.path.dirname(__file__), "honest_assessment.txt")
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            print(f.read())
+    else:
+        print("Assessment file not found.")
+
+
+def cmd_self_eval():
+    subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "self_eval.py")])
+
+
 def cmd_menu():
     header("IDEA LAB — Multi-Domain Benchmark & Execute")
     print(dim("  An idea is worth zero until tested positive and executed.\n"))
@@ -365,6 +379,8 @@ def cmd_menu():
     print(f"  {cyn('kill')}    <id>     Kill an idea")
     print(f"  {cyn('report')}           Portfolio report")
     print(f"  {cyn('domains')}          List all 13 domains")
+    print(f"  {cyn('self-eval')}        Run system self-evaluation")
+    print(f"  {cyn('assessment')}       View the latest honest assessment")
     print()
 
 
@@ -380,6 +396,8 @@ if __name__ == "__main__":
         "report":  cmd_report,
         "domains": cmd_domains,
         "research": cmd_research,
+        "self-eval": cmd_self_eval,
+        "assessment": cmd_assessment,
     }
 
     if cmd in dispatch:

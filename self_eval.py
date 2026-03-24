@@ -28,7 +28,7 @@ from display import (header, section, hr, b, dim, red, grn, ylw, cyn,
                      print_idea_summary, RESET)
 import uuid
 
-save_all({})
+# save_all({}) # Removed to prevent wiping DB
 def mk(): return str(uuid.uuid4())[:8]
 
 
@@ -43,7 +43,7 @@ ideas = []
 # The system is a command-line tool that benchmarks ideas across 12 domains.
 
 i1 = Idea(
-    id=mk(),
+    id="sys_tool",
     name="Idea Benchmarking System (the tool)",
     description="A CLI tool that benchmarks ideas across 12 domains using adaptive dimensions, "
                 "a value formula, and a 5-phase workflow enforcing test + execution gates.",
@@ -93,7 +93,7 @@ ideas.append(i1)
 # The formula: IdeaValue = GroupA × GroupB × test_passed × executed
 
 i2 = Idea(
-    id=mk(),
+    id="sys_formula",
     name="The IdeaValue Formula  (GroupA × GroupB × T × E)",
     description="IdeaValue = (d1×d2×d3) × (d4+d5+d6) × test_passed × executed. "
                 "Any zero multiplier collapses the total to zero. "
@@ -134,7 +134,7 @@ ideas.append(i2)
 # The insight that one dimension set cannot serve all idea types.
 
 i3 = Idea(
-    id=mk(),
+    id="sys_adaptive",
     name="Domain-Adaptive Dimension Profiles",
     description="Instead of one fixed set of 6 dimensions, each domain carries its own "
                 "complete dimension profile — same structure, different meaning per domain. "
@@ -177,7 +177,7 @@ ideas.append(i3)
 # The claim: some dimensions are load-bearing. Zero on them = stop, regardless of other scores.
 
 i4 = Idea(
-    id=mk(),
+    id="sys_kill",
     name="Kill Condition Mechanism  (load-bearing dimensions)",
     description="Each domain has one dimension that is so foundational that scoring zero "
                 "on it makes further benchmarking meaningless. The system stops immediately "
@@ -221,7 +221,7 @@ ideas.append(i4)
 # The claim: every domain must include falsifiability as one of its 6 dimensions.
 
 i5 = Idea(
-    id=mk(),
+    id="sys_falsify",
     name="Falsifiability as a Universal Dimension",
     description="Every domain, regardless of how different its ideas are, "
                 "must include a dimension that asks: can this be proven wrong? "
@@ -269,7 +269,7 @@ ideas.append(i5)
 # "An idea is worth zero until tested positive and executed."
 
 i6 = Idea(
-    id=mk(),
+    id="sys_principle",
     name="Core Principle: Ideas Worth Zero Until Tested + Executed",
     description="The foundational claim the entire system rests on: "
                 "an untested idea is indistinguishable from a delusion. "
@@ -315,7 +315,7 @@ ideas.append(i6)
 # Recursive Weighted Pivot logic: NewScore = (1-w)*OldScore + w*InputScore
 
 i7 = Idea(
-    id=mk(),
+    id="sys_pivot",
     name="Recursive Weighted Pivots",
     description="Recursive Weighted Pivot logic: NewScore = (1-w)*OldScore + w*InputScore. "
                 "Allows granular confidence building as research deepens, preventing "
@@ -354,7 +354,7 @@ ideas.append(i7)
 # Automated progression through 4 stages based on research depth, tests, and execution.
 
 i8 = Idea(
-    id=mk(),
+    id="sys_knowledge",
     name="Automated Knowledge Status Tracking",
     description="Automated progression through 4 stages (UNRESEARCHED, EXPLORING, "
                 "KNOWLEDGEABLE, EXPERT) based on objective metrics: research word count, "
@@ -392,7 +392,7 @@ ideas.append(i8)
 # Graceful handling of corrupted or malformed JSON data.
 
 i9 = Idea(
-    id=mk(),
+    id="sys_json",
     name="JSON Robustness & Error Recovery",
     description="Graceful handling of corrupted or malformed JSON data by returning "
                 "an empty dataset and warning instead of crashing. Protects the "
@@ -428,7 +428,7 @@ ideas.append(i9)
 # A comprehensive 69-test suite.
 
 i10 = Idea(
-    id=mk(),
+    id="sys_stress",
     name="Multi-Domain Stress Suite (69 tests)",
     description="A comprehensive 69-test suite covering integrity, formula boundaries, "
                 "kill conditions, and performance across 13 domains. Ensures system "
@@ -465,7 +465,7 @@ ideas.append(i10)
 # A specialized domain for high-complexity investigation.
 
 i11 = Idea(
-    id=mk(),
+    id="sys_deep_research",
     name="Deep Research Domain",
     description="A specialized domain for high-complexity, multi-stage investigation "
                 "into recurring problems or novel fields. Features tailored dimensions "
@@ -501,9 +501,11 @@ ideas.append(i11)
 
 
 
-# ── SAVE ALL ──────────────────────────────────────────────────────────────────
-from models import save_all as _save_all
-_save_all({i.id: i for i in ideas})
+# ── MERGE & SAVE ──────────────────────────────────────────────────────────────
+current_db = load_all()
+for idea in ideas:
+    current_db[idea.id] = idea
+save_all(current_db)
 
 
 # ── PRINT RESULTS ─────────────────────────────────────────────────────────────
