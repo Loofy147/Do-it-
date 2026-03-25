@@ -1,15 +1,12 @@
 """
 idea_graph.py — Bridge between Idea Lab and ThoughtGraph
-
-The portfolio of ideas IS a knowledge graph.
-Every idea is a node. Domain affinity creates edges.
-Cross-references create bridges. Think() finds blind spots.
+Optimized for large datasets (1000+ nodes).
 """
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from thought_graph import ThoughtGraph, make_embedding
+from thought_graph import ThoughtGraph, make_embedding, GraphAnalyzer
 import numpy as np
 from collections import defaultdict, Counter
 
@@ -67,39 +64,66 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
         node_map[idea_id] = node.id
         domain_nodes[idea.domain].append((idea_id, node.id, idea))
 
-    for domain, entries in domain_nodes.items():
-        for i in range(len(entries)):
-            for j in range(i + 1, len(entries)):
-                _, na, ia = entries[i]; _, nb, ib = entries[j]
-                strength = 0.75 if (ia.idea_value() > 0 and ib.idea_value() > 0) else 0.55
-                g.connect(na, nb, strength=strength)
+    is_large = len(ideas) > 200
+
+    for entries in domain_nodes.values():
+        if is_large:
+            stride = max(1, len(entries) // 10)
+            for i in range(0, len(entries), stride):
+                for j in range(i + stride, min(i + stride * 3, len(entries)), stride):
+                    _, na, ia = entries[i]; _, nb, ib = entries[j]
+                    g.connect(na, nb, strength=0.6)
+        else:
+            for i in range(len(entries)):
+                for j in range(i + 1, len(entries)):
+                    _, na, ia = entries[i]; _, nb, ib = entries[j]
+                    strength = 0.75 if (ia.idea_value() > 0 and ib.idea_value() > 0) else 0.55
+                    g.connect(na, nb, strength=strength)
 
     domain_anchors = {d: max(e, key=lambda x: (x[2].idea_value(), x[2].total_score))[1] for d, e in domain_nodes.items() if e}
 
-    # Connect affiliated domains
+    # Structural load-bearers
+    load_bearers = [iid for iid, idea in ideas.items() if idea.idea_value() >= 40 and not idea.killed]
+    for lb_id in load_bearers:
+        lb_node = node_map[lb_id]
+        for d, anchor in domain_anchors.items():
+            if d != ideas[lb_id].domain: g.connect(lb_node, anchor, strength=0.70)
+
     for d, affs in DOMAIN_AFFINITY.items():
         if d in domain_anchors:
             for a in affs:
                 if a in domain_anchors: g.connect(domain_anchors[d], domain_anchors[a], strength=0.50)
 
-    all_nodes = list(node_map.items())
-    if len(all_nodes) >= 2:
-        embs = np.array([g.get_node(nid).embedding for _, nid in all_nodes], dtype=np.float32)
-        sims = (embs @ embs.T + 1) / 2
-        for i in range(len(all_nodes)):
-            for j in range(i+1, len(all_nodes)):
-                ida, nodea = all_nodes[i]; idb, nodeb = all_nodes[j]
-                if ideas[ida].domain != ideas[idb].domain:
-                    s = float(sims[i,j])
-                    if s > 0.78: g.connect(nodea, nodeb, strength=round(s-0.2, 2))
+    if not is_large:
+        all_nodes = list(node_map.items())
+        if 2 <= len(all_nodes) < 1000:
+            embs = np.array([g.get_node(nid).embedding for _, nid in all_nodes], dtype=np.float32)
+            sims = (embs @ embs.T + 1) / 2
+            for i in range(len(all_nodes)):
+                for j in range(i+1, len(all_nodes)):
+                    ida, nodea = all_nodes[i]; idb, nodeb = all_nodes[j]
+                    if ideas[ida].domain != ideas[idb].domain:
+                        s = float(sims[i,j])
+                        if s > 0.85: g.connect(nodea, nodeb, strength=round(s-0.2, 2))
+
     g._topo_dirty = True
-    g.record_snapshot()
     return g, node_map
 
 def portfolio_insights(ideas: dict) -> dict:
     g, node_map = sync_to_graph(ideas); rev = {v: k for k, v in node_map.items()}
-    topo = g.get_topology(); h = g.graph_health_score(); a = g.graph_analytics()
-    thought = g.think(k_bridges=12)
+    is_huge = len(ideas) > 250
+    analyzer = GraphAnalyzer(g._nodes, g._edges)
+
+    if not is_huge:
+        topo = g.get_topology()
+        h = g.graph_health_score()
+        a = g.graph_analytics()
+        thought = g.think(k_bridges=12)
+    else:
+        topo = {"pagerank": analyzer.pagerank(), "communities": analyzer.communities(), "bridges": [], "betweenness": {}}
+        h = {"score": 0.0, "grade": "SCALE", "breakdown": {}}
+        a = {"small_world_index": 0, "modularity": 0, "n_bridges": 0}
+        thought = {"insight": "Graph reasoning disabled at this scale.", "bridges": []}
 
     top_ideas = [{"id":rev.get(nid), "name":ideas[rev[nid]].name, "pagerank":s, "iv":int(ideas[rev[nid]].idea_value()), "domain":ideas[rev[nid]].domain}
                  for nid, s in sorted(topo["pagerank"].items(), key=lambda x: -x[1])[:10] if rev.get(nid)]
@@ -113,9 +137,10 @@ def portfolio_insights(ideas: dict) -> dict:
                 for cid, m in sorted(com_groups.items())]
 
     dups = []
-    for d in g.find_duplicates(threshold=0.88):
-        aid, bid = rev.get(d["node_a_id"]), rev.get(d["node_b_id"])
-        if aid and bid: dups.append({"idea_a":ideas[aid].name, "idea_b":ideas[bid].name, "similarity":d["similarity"]})
+    if not is_huge:
+        for d in g.find_duplicates(threshold=0.88):
+            aid, bid = rev.get(d["node_a_id"]), rev.get(d["node_b_id"])
+            if aid and bid: dups.append({"idea_a":ideas[aid].name, "idea_b":ideas[bid].name, "similarity":d["similarity"]})
 
     critical = []
     bridges = topo.get("bridges", [])
@@ -123,19 +148,21 @@ def portfolio_insights(ideas: dict) -> dict:
         for u, v in bridges:
             for nid in (u, v):
                 iid = rev.get(nid)
-                if iid and not any(x["id"]==iid for x in critical):
-                    critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
+                if iid and not any(x["id"]==iid for x in critical): critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
     else:
         btw = topo.get("betweenness", {})
         sorted_btw = sorted(btw.items(), key=lambda x: -x[1])
         for nid, score in sorted_btw[:3]:
             iid = rev.get(nid)
-            if iid and score > 0:
-                critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
+            if iid and score > 0: critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
+
+    interp = "Structure analysis complete."
+    if not is_huge:
+        interp = ("Portfolio is well-connected — " if h["grade"] in ("A","B") else "Portfolio has structural gaps — ") + f"health {h['score']:.0f}/100"
 
     return {
-        "graph_health": {"graph_health":h["score"], "grade":h["grade"], "connectivity":h["breakdown"].get("connectivity",0), "community_score":h["breakdown"].get("community",0), "diversity":h["breakdown"].get("diversity",0), "small_world":a.get("small_world_index",0), "modularity":a.get("modularity",0), "n_bridges":len(bridges), "interpretation":("Portfolio is well-connected — " if h["grade"] in ("A","B") else "Portfolio has structural gaps — ") + f"health {h['score']:.0f}/100"},
-        "top_ideas": top_ideas, "clusters": clusters, "think_insight": thought.get("insight",""), "think_bridges": thought.get("bridges",[])[:3], "health_advice": g.graph_health_advice()[:3], "total_ideas": len(ideas), "active_ideas": sum(1 for i in ideas.values() if not i.killed), "executed_ideas": sum(1 for i in ideas.values() if i.executed), "value_ideas": sum(1 for i in ideas.values() if i.idea_value() > 0), "duplicate_pairs": dups, "critical_bridges": critical[:5]
+        "graph_health": {"graph_health":h.get("score", 0), "grade":h.get("grade", "N/A"), "connectivity":h.get("breakdown",{}).get("connectivity",0), "community_score":h.get("breakdown",{}).get("community",0), "diversity":h.get("breakdown",{}).get("diversity",0), "small_world":a.get("small_world_index",0), "modularity":a.get("modularity",0), "n_bridges":len(bridges), "interpretation":interp},
+        "top_ideas": top_ideas, "clusters": clusters, "think_insight": thought.get("insight",""), "think_bridges": thought.get("bridges",[])[:3], "health_advice": g.graph_health_advice()[:3] if not is_huge else [], "total_ideas": len(ideas), "active_ideas": sum(1 for i in ideas.values() if not i.killed), "executed_ideas": sum(1 for i in ideas.values() if i.executed), "value_ideas": sum(1 for i in ideas.values() if i.idea_value() > 0), "duplicate_pairs": dups, "critical_bridges": critical[:5]
     }
 
 def propose_ideas(ideas: dict, domain: str = None, k: int = 5) -> list:
@@ -176,12 +203,6 @@ def path_between_ideas(ideas: dict, ida: str, idb: str) -> dict:
     for i, h in enumerate(res["hops"]):
         iid = rev.get(h["node_id"]); idea = ideas.get(iid)
         strength = h.get("edge_strength")
-        reason = ""
-        if i > 0:
-            sim = h.get("semantic_sim", 0)
-            if sim > 0.8: reason = f"Semantic similarity ({sim:.2f})"
-            elif strength >= 0.7: reason = "Same domain synergy"
-            elif strength >= 0.5: reason = "Domain affinity bridge"
-            else: reason = "Weak exploratory link"
+        reason = h.get("reason", "")
         hops.append({"label":h["label"], "domain":idea.domain if idea else "unknown", "iv":int(idea.idea_value()) if idea else 0, "edge_strength":strength, "reason":reason})
     return {"found":True, "length":res["length"], "hops":hops, "total_cost":res["total_cost"], "explanation":" → ".join(h["label"] for h in hops)}
