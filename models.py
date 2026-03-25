@@ -25,7 +25,7 @@ class TestDesign:
     success_criteria: str = ""
     failure_criteria: str = ""
     deadline: str = ""
-    result: Optional[str] = None       # "pass" | "fail" | None
+    result: Optional[str] = None
     result_date: Optional[str] = None
     result_notes: str = ""
 
@@ -35,7 +35,7 @@ class Idea:
     id: str
     name: str
     description: str
-    domain: str                        # key into DOMAINS registry
+    domain: str
     scores: dict = field(default_factory=dict)
     total_score: float = 0.0
     verdict: str = ""
@@ -49,24 +49,20 @@ class Idea:
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     killed: bool = False
     kill_reason: str = ""
+    # v2: graph tracking
+    graph_node_id: Optional[int] = None
 
     @property
     def knowledge_status(self) -> str:
-        """
-        Calculates status based on deep research, tests, and execution.
-        """
         if self.executed:
             return "EXPERT"
         if self.test and self.test.result == "pass":
             return "KNOWLEDGEABLE"
-
-        # Count words in research notes as a proxy for depth
         research_depth = len(self.research_notes.split()) if self.research_notes else 0
         if research_depth > 100:
             return "KNOWLEDGEABLE"
         if research_depth > 0:
             return "EXPLORING"
-
         return "UNRESEARCHED"
 
     def compute_score(self):
@@ -77,20 +73,10 @@ class Idea:
                 self.verdict = verdict
                 self.verdict_action = action
                 break
-        # Edge case for max score
         if s >= 12:
             self.verdict, self.verdict_action = VERDICTS[(10, 12.1)]
 
     def idea_value(self) -> float:
-        """
-        IdeaValue = GroupA × GroupB × test_passed × executed
-
-        GroupA = first three dimension scores multiplied  (precision/validity/falsifiability)
-        GroupB = last three dimension scores summed        (reach + resistance + fit)
-
-        If any multiplier is 0 → total value = 0.
-        This enforces the core principle: untested or unexecuted = zero.
-        """
         vals = list(self.scores.values())
         if len(vals) < 6:
             return 0.0
@@ -106,20 +92,20 @@ class Idea:
         return self.idea_value() / self.estimated_cost
 
     def to_dict(self):
-        d = asdict(self)
-        return d
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, d):
         d = dict(d)
         test_data = d.pop("test", None)
+        # forward-compat: ignore unknown fields
+        valid = {f.name for f in cls.__dataclass_fields__.values()}
+        d = {k: v for k, v in d.items() if k in valid}
         idea = cls(**d)
         if test_data:
             idea.test = TestDesign(**test_data)
         return idea
 
-
-# ── STORAGE ────────────────────────────────────────────────────────────────────
 
 def load_all() -> dict:
     if not os.path.exists(DB_PATH):
