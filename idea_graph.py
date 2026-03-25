@@ -82,8 +82,9 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
 
     domain_anchors = {d: max(e, key=lambda x: (x[2].idea_value(), x[2].total_score))[1] for d, e in domain_nodes.items() if e}
 
-    # Structural load-bearers
+    # Structural load-bearers (optimized for scale)
     load_bearers = [iid for iid, idea in ideas.items() if idea.idea_value() >= 40 and not idea.killed]
+    if len(load_bearers) > 50: load_bearers = sorted(load_bearers, key=lambda x: ideas[x].idea_value(), reverse=True)[:50]
     for lb_id in load_bearers:
         lb_node = node_map[lb_id]
         for d, anchor in domain_anchors.items():
@@ -94,13 +95,21 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
             for a in affs:
                 if a in domain_anchors: g.connect(domain_anchors[d], domain_anchors[a], strength=0.50)
 
-    if not is_large:
+    # Cross-domain semantic bridges (optimized for scale)
+    if len(ideas) < 500:
         all_nodes = list(node_map.items())
-        if 2 <= len(all_nodes) < 1000:
+        if 2 <= len(all_nodes):
             embs = np.array([g.get_node(nid).embedding for _, nid in all_nodes], dtype=np.float32)
             sims = (embs @ embs.T + 1) / 2
             for i in range(len(all_nodes)):
-                for j in range(i+1, len(all_nodes)):
+                # Only check a subset of nodes for large-ish portfolios to keep it O(N log N) ish
+                sample_range = range(i+1, len(all_nodes))
+                if len(all_nodes) > 200:
+                    import random
+                    sample_size = min(len(sample_range), 50)
+                    sample_range = random.sample(list(sample_range), sample_size)
+
+                for j in sample_range:
                     ida, nodea = all_nodes[i]; idb, nodeb = all_nodes[j]
                     if ideas[ida].domain != ideas[idb].domain:
                         s = float(sims[i,j])
@@ -111,15 +120,18 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
 
 def portfolio_insights(ideas: dict) -> dict:
     g, node_map = sync_to_graph(ideas); rev = {v: k for k, v in node_map.items()}
-    is_huge = len(ideas) > 250
+    is_huge = len(ideas) > 3000
     analyzer = GraphAnalyzer(g._nodes, g._edges)
 
-    if not is_huge:
-        topo = g.get_topology()
+    # Tiered analytics scaling: O(N^3) metrics disabled at >300, GraphThink disabled at >3000
+    if len(ideas) < 3000:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
         h = g.graph_health_score()
         a = g.graph_analytics()
         thought = g.think(k_bridges=12)
     else:
+        # Scale-safe metrics only (PageRank, Community, Basic Connectivity)
         topo = {"pagerank": analyzer.pagerank(), "communities": analyzer.communities(), "bridges": [], "betweenness": {}}
         h = {"score": 0.0, "grade": "SCALE", "breakdown": {}}
         a = {"small_world_index": 0, "modularity": 0, "n_bridges": 0}
@@ -137,7 +149,14 @@ def portfolio_insights(ideas: dict) -> dict:
                 for cid, m in sorted(com_groups.items())]
 
     dups = []
+    # Tiered analytics scaling
     if not is_huge:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
+        h = g.graph_health_score()
+        a = g.graph_analytics()
+        thought = g.think(k_bridges=12)
+    else:
         for d in g.find_duplicates(threshold=0.88):
             aid, bid = rev.get(d["node_a_id"]), rev.get(d["node_b_id"])
             if aid and bid: dups.append({"idea_a":ideas[aid].name, "idea_b":ideas[bid].name, "similarity":d["similarity"]})
@@ -157,7 +176,14 @@ def portfolio_insights(ideas: dict) -> dict:
             if iid and score > 0: critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
 
     interp = "Structure analysis complete."
+    # Tiered analytics scaling
     if not is_huge:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
+        h = g.graph_health_score()
+        a = g.graph_analytics()
+        thought = g.think(k_bridges=12)
+    else:
         interp = ("Portfolio is well-connected — " if h["grade"] in ("A","B") else "Portfolio has structural gaps — ") + f"health {h['score']:.0f}/100"
 
     return {
@@ -168,18 +194,35 @@ def portfolio_insights(ideas: dict) -> dict:
 def propose_ideas(ideas: dict, domain: str = None, k: int = 5) -> list:
     from domains import DOMAINS, get_domain
     g, node_map = sync_to_graph(ideas); thought = g.think(k_bridges=k*2); proposals = []
+
+    # Pre-calculate domain embedding matrices for efficient affinity matching
+    domain_matrices = {}
+    for d in DOMAINS.keys():
+        d_ideas = [i for i in ideas.values() if i.domain == d and not i.killed]
+        if d_ideas:
+            domain_matrices[d] = np.array([make_embedding(i.name) for i in d_ideas], dtype=np.float32)
+
     for br in thought.get("bridges", []):
         concept = br["proposed_concept"]; c_emb = np.array(make_embedding(concept), dtype=np.float32)
         best_d, best_s = "methodology", -1.0
-        for d in DOMAINS.keys():
-            d_ideas = [i for i in ideas.values() if i.domain == d and not i.killed]
-            if not d_ideas: continue
-            d_embs = np.array([make_embedding(i.name) for i in d_ideas], dtype=np.float32)
+
+        for d, d_embs in domain_matrices.items():
             mean_s = float(((d_embs @ c_emb + 1) / 2).mean())
             if mean_s > best_s: best_s, best_d = mean_s, d
+
         if domain: best_d = domain
         dom_cfg = get_domain(best_d)
-        proposals.append({"concept":concept, "domain":best_d, "domain_label":dom_cfg["label"], "idea_noun":dom_cfg["idea_noun"], "bridge_score":br["bridge_score"], "anchor_a":br["anchor_a"], "anchor_b":br["anchor_b"], "rationale":f"Bridges '{br['anchor_a']}' and '{br['anchor_b']}'. Fit: {dom_cfg['label']} (sim={best_s:.3f}).", "type":br.get("type","proposal")})
+        proposals.append({
+            "concept": concept,
+            "domain": best_d,
+            "domain_label": dom_cfg["label"],
+            "idea_noun": dom_cfg["idea_noun"],
+            "bridge_score": br["bridge_score"],
+            "anchor_a": br["anchor_a"],
+            "anchor_b": br["anchor_b"],
+            "rationale": f"Bridges '{br['anchor_a']}' and '{br['anchor_b']}'. Fit: {dom_cfg['label']} (sim={best_s:.3f}).",
+            "type": br.get("type", "proposal")
+        })
     return proposals[:k]
 
 def domain_gap_report(ideas: dict) -> dict:
