@@ -791,7 +791,7 @@ class ThoughtGraph:
 
         expected_f  = (avg_degree / n) * 2 if n > 0 else 0.001
         conn        = min(25.0, (fied / max(expected_f, 0.0001)) * 25.0)
-        community   = min(25.0, max(0.0, mod) / 0.65 * 25.0)
+        community   = min(25.0, max(0.0, mod) / 0.45 * 25.0)
         entropy     = ent_eff * 20.0
         sw_s        = min(15.0, math.log(1 + sw) / math.log(2.5) * 15.0) if sw > 0 else 0.0
         diversity   = (n_types / 4.0) * 15.0

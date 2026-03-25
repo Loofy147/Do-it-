@@ -1,62 +1,42 @@
-# IDEA LAB — Multi-Domain Benchmarking System
+# IDEA LAB v2 — Benchmarking + ThoughtGraph
 
-Idea Lab is a high-precision framework for evaluating, stress-testing, and executing ideas across 13 distinct domains. It enforces the principle: **an idea is worth zero until tested positive and executed.**
+Idea Lab is a high-precision framework for evaluating and executing ideas across 13 distinct domains. It enforces the principle: **an idea is worth zero until tested positive and executed.**
 
-## 🧪 Core Principle: The IdeaValue Formula
+v2 introduces the **ThoughtGraph Merger**: a natural integration between structured benchmarking and topological analysis. While the original system scored individual ideas, ThoughtGraph reveals the structure, influence, and gaps of the entire portfolio.
 
-The system uses a non-linear, multiplicative formula to calculate real-world value:
+## 🧪 The IdeaValue Formula
+Value is calculated using a non-linear, multiplicative formula:
+`IdeaValue = (d1 × d2 × d3) × (d4 + d5 + d6) × test_passed × executed`
+This corrects for "Good Idea, No Market" or "Good Idea, No Skill" failure modes by making foundational dimensions multiplicative.
 
-```
-IdeaValue = (d1 × d2 × d3) × (d4 + d5 + d6) × test_passed × executed
-```
+## 🧠 ThoughtGraph Integration
+The two systems complement each other exactly: Idea Lab tells you whether an idea is worth pursuing; ThoughtGraph tells you how your ideas relate, what's missing, and what to pursue next.
 
-- **Group A (Multiplied)**: Foundational dimensions (Precision, Validity, Falsifiability). If any score is 0, the entire value collapses to 0.
-- **Group B (Summed)**: Scale and Fit dimensions (Reach, Resistance, Authority). These provide the magnitude of value.
-- **T & E (Binary/Multiplier)**: Value remains 0 until a minimum test is passed and the idea is marked as executed.
-
-### Scaling Factor
-The formula uses a **16× scaling factor**. Doubling all dimension scores (from 1 to 2) increases the potential value from 3 to 48.
+- **Portfolio Topology**: View your ideas as a knowledge graph where PageRank reveals structural load-bearers.
+- **Community Clustering**: Louvain algorithm groups ideas by semantic and domain affinity.
+- **Domain Gap Detection**: Automatically identifies absent domains in your portfolio.
+- **Graph Think**: The graph reasons about structural gaps and proposes new bridge candidates.
 
 ## 🔄 Recursive Weighted Pivots
-Unlike static scoring systems, Idea Lab supports iterative refinement through **Recursive Weighted Pivots**. When updating a dimension, you can specify a **Weight of Evidence (w)**:
-
-`NewScore = (1 - w) * OldScore + w * InputScore`
-
-This allows for granular confidence building as research deepens.
-
-## 🎓 Knowledgeable Status
-Ideas mature through four stages of "Knowledgeable Status":
-1. **UNRESEARCHED**: Default state.
-2. **EXPLORING**: Research notes recorded.
-3. **KNOWLEDGEABLE**: Significant research (>100 words) or passed test.
-4. **EXPERT**: Idea fully executed.
+Refine scores as research deepens: `NewScore = (1 - w) * OldScore + w * InputScore`. Prevent knee-jerk changes from single pieces of evidence.
 
 ## 🛠 Usage
 
 ```bash
-python3 idea_lab.py new         # Benchmark a new idea
-python3 idea_lab.py list        # List all ideas
-python3 idea_lab.py view <id>   # Detailed view of an idea
-python3 idea_lab.py pivot <id>  # Refine a dimension with weighted input
-python3 idea_lab.py research <id> # Record deep research findings
-python3 idea_lab.py report      # Portfolio performance and weaknesses
+# BENCHMARKING
+python3 idea_lab.py new          # New idea benchmark
+python3 idea_lab.py list         # List all ideas
+python3 idea_lab.py pivot <id>   # Weighted refinement
+python3 idea_lab.py report       # Portfolio performance
+
+# TOPOLOGY
+python3 idea_lab.py graph        # Portfolio topology + insights
+python3 idea_lab.py graph --export # Generate HTML visualizer
+python3 idea_lab.py propose      # Graph reasons about new ideas
+python3 idea_lab.py topology     # Full numeric metrics
+python3 idea_lab.py connect <a> <b> # Conceptual path tracing
 ```
 
-## 🏗 Supported Domains (13)
-- Deep Research
-- Question / Answer
-- Methodology
-- Project
-- Law / Policy
-- Mathematics
-- Scientific Hypothesis
-- Philosophy / Argument
-- Business / Startup
-- Educational Concept
-- Technology / Engineering
-- Social / Behavioral
-- Creative / Artistic
-
 ## 🛡 System Integrity
-The system includes a robust stress test suite covering 69 edge cases, performance benchmarks, and formula boundary conditions.
+Includes a 69-test stress suite covering integrity, formula boundaries, and performance.
 Run tests: `python3 "stress_test (1).py"`

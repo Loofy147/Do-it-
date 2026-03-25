@@ -5,17 +5,19 @@
 - [x] Recursive weighted pivot logic.
 - [x] Automated Knowledgeable Status tracking.
 - [x] Robust JSON error handling and stress testing.
-- [x] **Portfolio Optimization**: ROI-based resource allocation (IdeaValue/Cost ratios).
+- [x] **Portfolio Optimization**: ROI-based resource allocation.
 
-## Phase 2: Enhanced Interactivity (Short-term)
-- [ ] **Multi-stage Tests**: Support for testing multiple assumptions per idea.
-- [ ] **Dependency Graph**: Linking ideas (e.g., Idea A is a methodology used by Project B).
-- [ ] **Visual Reporting**: Exporting reports to HTML/PDF with charts for conversion funnels.
+## Phase 2: ThoughtGraph Integration (Completed)
+- [x] **Knowledge Graph Sync**: Convert every Idea Lab entry to a ThoughtNode.
+- [x] **Topology Commands**: New `graph`, `propose`, `topology`, and `connect` commands.
+- [x] **Portfolio Insights**: PageRank ranking, Louvain clustering, and domain gap detection.
+- [x] **Graph Think**: Structural gap analysis and candidate proposal.
 
 ## Phase 3: External Integration (Medium-term)
+- [ ] **Multi-stage Tests**: Support for testing multiple assumptions per idea.
+- [ ] **Visual Reporting**: Exporting reports to HTML/PDF with charts.
 - [ ] **API Access**: REST API to allow external tools to submit research or trigger pivots.
-- [ ] **Automated Research Agents**: Integration with LLMs to generate initial dimension scores based on provided descriptions.
-- [ ] **Version History**: Full audit log of score changes and research updates.
+- [ ] **Automated Research Agents**: LLM-driven dimension scoring.
 
 ## Phase 4: Scaling & Collaboration (Long-term)
 - [ ] **Multi-user Support**: Role-based access for peer-reviewing ideas.
