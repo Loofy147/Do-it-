@@ -1,0 +1,34 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Idea Lab Portfolio Graph</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style type="text/css">
+        #mynetwork { width: 100%; height: 800px; border: 1px solid lightgray; background: #222; }
+        body { font-family: sans-serif; background: #111; color: #eee; }
+    </style>
+</head>
+<body>
+    <h2 style="padding: 20px;">Idea Lab Portfolio Graph</h2>
+    <div id="mynetwork"></div>
+    <script type="text/javascript">
+        var nodes = new vis.DataSet([{"id": 0, "label": "Why Do We Dream?", "group": "child", "value": 2.666666666666667}, {"id": 1, "label": "Async Decision Framework", "group": "active", "value": 5.0}, {"id": 2, "label": "Internal API Gateway", "group": "active", "value": 1.2}, {"id": 3, "label": "Algorithmic Audit Mandate", "group": "potential", "value": 0.3}, {"id": 4, "label": "Graph Coloring Bound Conjecture", "group": "child", "value": 1.2000000000000002}, {"id": 5, "label": "Microplastics & Gut Permeability", "group": "active", "value": 3.0}, {"id": 6, "label": "Moral Obligation Without Free Will", "group": "meta", "value": 5.0}, {"id": 7, "label": "FreightMatch AI", "group": "active", "value": 5.0}, {"id": 8, "label": "Proof-First Calculus", "group": "active", "value": 1.2}, {"id": 9, "label": "Zero-Copy Event Bus", "group": "active", "value": 5.0}, {"id": 10, "label": "Default-On Privacy Settings", "group": "active", "value": 1.2}, {"id": 11, "label": "The Memory Architect", "group": "child", "value": 3.0}]);
+        var edges = new vis.DataSet([{"from": 1, "to": 0, "value": 0.7}, {"from": 1, "to": 2, "value": 0.7}, {"from": 1, "to": 3, "value": 0.7}, {"from": 1, "to": 4, "value": 0.7}, {"from": 1, "to": 5, "value": 0.7}, {"from": 1, "to": 6, "value": 0.7}, {"from": 1, "to": 7, "value": 0.7}, {"from": 1, "to": 8, "value": 0.7}, {"from": 1, "to": 9, "value": 0.7}, {"from": 1, "to": 10, "value": 0.7}, {"from": 1, "to": 11, "value": 0.7}, {"from": 6, "to": 0, "value": 0.7}, {"from": 6, "to": 2, "value": 0.7}, {"from": 6, "to": 3, "value": 0.7}, {"from": 6, "to": 4, "value": 0.7}, {"from": 6, "to": 5, "value": 0.7}, {"from": 6, "to": 7, "value": 0.7}, {"from": 6, "to": 8, "value": 0.7}, {"from": 6, "to": 9, "value": 0.7}, {"from": 6, "to": 10, "value": 0.7}, {"from": 6, "to": 11, "value": 0.7}, {"from": 7, "to": 0, "value": 0.7}, {"from": 7, "to": 2, "value": 0.7}, {"from": 7, "to": 3, "value": 0.7}, {"from": 7, "to": 4, "value": 0.7}, {"from": 7, "to": 5, "value": 0.7}, {"from": 7, "to": 8, "value": 0.7}, {"from": 7, "to": 9, "value": 0.7}, {"from": 7, "to": 10, "value": 0.7}, {"from": 7, "to": 11, "value": 0.7}, {"from": 9, "to": 0, "value": 0.7}, {"from": 9, "to": 2, "value": 0.7}, {"from": 9, "to": 3, "value": 0.7}, {"from": 9, "to": 4, "value": 0.7}, {"from": 9, "to": 5, "value": 0.7}, {"from": 9, "to": 8, "value": 0.7}, {"from": 9, "to": 10, "value": 0.7}, {"from": 9, "to": 11, "value": 0.7}, {"from": 5, "to": 4, "value": 0.5}, {"from": 8, "to": 10, "value": 0.5}, {"from": 3, "to": 10, "value": 0.5}, {"from": 11, "to": 8, "value": 0.5}, {"from": 11, "to": 10, "value": 0.5}]);
+        var container = document.getElementById('mynetwork');
+        var data = { nodes: nodes, edges: edges };
+        var options = {
+            nodes: { shape: 'dot', font: { color: '#eee', size: 14 } },
+            edges: { color: { inherit: 'from' }, opacity: 0.5 },
+            groups: {
+                meta: { color: { background: '#96c', border: '#74a' }, size: 40 },
+                active: { color: { background: '#4c4', border: '#2a2' }, size: 30 },
+                potential: { color: { background: '#888', border: '#666' }, size: 20 },
+                child: { color: { background: '#49c', border: '#27a' }, size: 20 }
+            },
+            physics: { forceAtlas2Based: { gravitationalConstant: -50, centralGravity: 0.01, springLength: 100, springConstant: 0.08 }, maxVelocity: 50, solver: 'forceAtlas2Based', stabilization: { iterations: 150 } }
+        };
+        var network = new vis.Network(container, data, options);
+    </script>
+</body>
+</html>
