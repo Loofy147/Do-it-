@@ -12,6 +12,7 @@ Changes from v2.0:
 
 import json, math, time, random, collections
 from dataclasses import dataclass, field, asdict
+from functools import lru_cache
 from typing import Optional
 from pathlib import Path
 import numpy as np
@@ -29,6 +30,7 @@ def _fnv1a(text):
         h ^= b; h = (h * 16777619) & 0xFFFFFFFF
     return h
 
+@lru_cache(maxsize=1024)
 def make_embedding(label, dims=512):
     """
     Character n-gram hashing embedding with 512 dims and 4 hash functions.
@@ -42,7 +44,7 @@ def make_embedding(label, dims=512):
             for salt, wm in [("a", 1.0), ("b", 0.60), ("c", 0.40), ("d", 0.30)]:
                 vec[_fnv1a(gram + salt) % dims] += w * wm
     norm = math.sqrt(sum(v * v for v in vec)) or 1.0
-    return [v / norm for v in vec]
+    return tuple(v / norm for v in vec)
 
 def _compute_baseline_similarity(nodes: list) -> tuple:
     """
@@ -82,7 +84,7 @@ class ThoughtNode:
     parent_id: Optional[int] = None
     children_ids: list = field(default_factory=list)
     connections: list = field(default_factory=list)
-    embedding: list = field(default_factory=list)
+    embedding: tuple = field(default_factory=tuple)
     created_at: float = field(default_factory=time.time)
     last_activated: float = 0.0
     activation_count: int = 0
