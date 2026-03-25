@@ -82,8 +82,9 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
 
     domain_anchors = {d: max(e, key=lambda x: (x[2].idea_value(), x[2].total_score))[1] for d, e in domain_nodes.items() if e}
 
-    # Structural load-bearers
+    # Structural load-bearers (optimized for scale)
     load_bearers = [iid for iid, idea in ideas.items() if idea.idea_value() >= 40 and not idea.killed]
+    if len(load_bearers) > 50: load_bearers = sorted(load_bearers, key=lambda x: ideas[x].idea_value(), reverse=True)[:50]
     for lb_id in load_bearers:
         lb_node = node_map[lb_id]
         for d, anchor in domain_anchors.items():
@@ -94,13 +95,21 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
             for a in affs:
                 if a in domain_anchors: g.connect(domain_anchors[d], domain_anchors[a], strength=0.50)
 
-    if not is_large:
+    # Cross-domain semantic bridges (optimized for scale)
+    if len(ideas) < 500:
         all_nodes = list(node_map.items())
-        if 2 <= len(all_nodes) < 1000:
+        if 2 <= len(all_nodes):
             embs = np.array([g.get_node(nid).embedding for _, nid in all_nodes], dtype=np.float32)
             sims = (embs @ embs.T + 1) / 2
             for i in range(len(all_nodes)):
-                for j in range(i+1, len(all_nodes)):
+                # Only check a subset of nodes for large-ish portfolios to keep it O(N log N) ish
+                sample_range = range(i+1, len(all_nodes))
+                if len(all_nodes) > 200:
+                    import random
+                    sample_size = min(len(sample_range), 50)
+                    sample_range = random.sample(list(sample_range), sample_size)
+
+                for j in sample_range:
                     ida, nodea = all_nodes[i]; idb, nodeb = all_nodes[j]
                     if ideas[ida].domain != ideas[idb].domain:
                         s = float(sims[i,j])
@@ -111,15 +120,18 @@ def sync_to_graph(ideas: dict, g: ThoughtGraph = None) -> tuple:
 
 def portfolio_insights(ideas: dict) -> dict:
     g, node_map = sync_to_graph(ideas); rev = {v: k for k, v in node_map.items()}
-    is_huge = len(ideas) > 250
+    is_huge = len(ideas) > 3000
     analyzer = GraphAnalyzer(g._nodes, g._edges)
 
-    if not is_huge:
-        topo = g.get_topology()
+    # Tiered analytics scaling: O(N^3) metrics disabled at >300, GraphThink disabled at >3000
+    if len(ideas) < 3000:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
         h = g.graph_health_score()
         a = g.graph_analytics()
         thought = g.think(k_bridges=12)
     else:
+        # Scale-safe metrics only (PageRank, Community, Basic Connectivity)
         topo = {"pagerank": analyzer.pagerank(), "communities": analyzer.communities(), "bridges": [], "betweenness": {}}
         h = {"score": 0.0, "grade": "SCALE", "breakdown": {}}
         a = {"small_world_index": 0, "modularity": 0, "n_bridges": 0}
@@ -137,7 +149,14 @@ def portfolio_insights(ideas: dict) -> dict:
                 for cid, m in sorted(com_groups.items())]
 
     dups = []
+    # Tiered analytics scaling
     if not is_huge:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
+        h = g.graph_health_score()
+        a = g.graph_analytics()
+        thought = g.think(k_bridges=12)
+    else:
         for d in g.find_duplicates(threshold=0.88):
             aid, bid = rev.get(d["node_a_id"]), rev.get(d["node_b_id"])
             if aid and bid: dups.append({"idea_a":ideas[aid].name, "idea_b":ideas[bid].name, "similarity":d["similarity"]})
@@ -157,7 +176,14 @@ def portfolio_insights(ideas: dict) -> dict:
             if iid and score > 0: critical.append({"id":iid, "name":ideas[iid].name, "domain":ideas[iid].domain})
 
     interp = "Structure analysis complete."
+    # Tiered analytics scaling
     if not is_huge:
+        use_expensive = len(ideas) < 300
+        topo = g.get_topology(include_expensive=use_expensive)
+        h = g.graph_health_score()
+        a = g.graph_analytics()
+        thought = g.think(k_bridges=12)
+    else:
         interp = ("Portfolio is well-connected — " if h["grade"] in ("A","B") else "Portfolio has structural gaps — ") + f"health {h['score']:.0f}/100"
 
     return {
