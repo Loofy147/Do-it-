@@ -242,7 +242,7 @@ class GraphAnalyzer:
             return scored[:k]
         except: return []
 
-    def full_report(self):
+    def full_report(self, include_expensive=True):
         pr    = self.pagerank()
         btw   = self.betweenness()
         close = self.closeness()
@@ -251,12 +251,16 @@ class GraphAnalyzer:
         coms  = self.communities()
         clust = self.clustering()
         entr  = self.entropy()
-        fied  = self.fiedler()
-        sw    = self.small_world()
-        mod   = self.modularity(coms)
+
+        if include_expensive:
+            fied  = self.fiedler()
+            sw    = self.small_world()
+            mod   = self.modularity(coms)
+        else:
+            fied, sw, mod = 0.0, 0.0, 0.0
+
         brgs  = self.bridges()
         links = self.link_prediction(k=5)
-
         def lbl(nid): return self._nodes[nid].label if nid in self._nodes else str(nid)
         top_pr   = max(pr,   key=pr.get)   if pr   else None
         top_btw  = max(btw,  key=btw.get)  if btw  else None
@@ -437,11 +441,11 @@ class ThoughtGraph:
 
     # ── TOPOLOGY ──────────────────────────────
 
-    def get_topology(self, force=False):
+    def get_topology(self, force=False, include_expensive=True):
         if self._topo_dirty or force or not self._cached_topo:
             if len(self._nodes) >= 2:
                 a = GraphAnalyzer(self._nodes, self._edges)
-                self._cached_topo = a.full_report()
+                self._cached_topo = a.full_report(include_expensive=include_expensive)
                 pr  = self._cached_topo["pagerank"]
                 btw = self._cached_topo["betweenness"]
                 com = self._cached_topo["communities"]
@@ -1321,7 +1325,7 @@ class ThoughtGraph:
         This means think() prefers connecting the graph to itself
         before importing external vocabulary.
         """
-        topo = self.get_topology()
+        topo = self.get_topology(include_expensive=False)
         coms = topo.get("communities", {})
         pr   = topo.get("pagerank", {})
 
